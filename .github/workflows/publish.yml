@@ -18,7 +18,26 @@ jobs:
           python-version: "3.12"
       - name: Check that the tag matches the package version
         run: |
-          version=$(python -c "import re;print(re.search(r'\"(.+)\"', open('src/highhxpack/__version__.py').read()).group(1))")
+          version=$(python - <<'EOF'
+          import ast
+          import pathlib
+          import sys
+
+          tree = ast.parse(pathlib.Path("src/highhxpack/__version__.py").read_text())
+          for node in tree.body:
+              if (
+                  isinstance(node, ast.Assign)
+                  and any(isinstance(t, ast.Name) and t.id == "__version__" for t in node.targets)
+                  and isinstance(node.value, ast.Constant)
+                  and isinstance(node.value.value, str)
+              ):
+                  print(node.value.value)
+                  break
+          else:
+              sys.exit("__version__ assignment not found in src/highhxpack/__version__.py")
+          EOF
+          )
+          test -n "${version}" || { echo "Could not determine package version"; exit 1; }
           test "v${version}" = "${GITHUB_REF_NAME}" || { echo "Tag ${GITHUB_REF_NAME} != v${version}"; exit 1; }
       - name: Test
         run: |

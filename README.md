@@ -1,4 +1,4 @@
-# HighHXPack
+# HighHXPackk
 
 **A local-first memory and context engine for AI applications, agents and developer tools.**
 
